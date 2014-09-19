@@ -1,29 +1,28 @@
 ---
 title: "Untitled"
-output: ioslides_presentation
+output: word_document
 ---
 
-## R Markdown
-
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
-
-## Slide with Bullets
-
-- Bullet 1
-- Bullet 2
-- Bullet 3
-
-## Slide with R Code and Output
+proiect
 
 ```{r}
-summary(cars)
+ library(caret)
+library(ISLR)
+library(kernlab)
+setwd("C:/Users/Home/Desktop/mlProject")
+data=read.table("pml-training.csv",header=F,sep=",",skip=1)
+cnames=readLines("pml-training.csv",1)
+cnames=strsplit(cnames,",",fixed=T)
+cnames[[1]][1]="id"
+cnames[[1]][2]=gsub("\"","",cnames[[1]][2])
+cnames[[1]][]=gsub("\"","",cnames[[1]][])
+names(data)=make.names(cnames[[1]])
 ```
 
-## Slide with Plot
+You can also embed plots, for example:
 
 ```{r, echo=FALSE}
 plot(cars)
 ```
 
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
