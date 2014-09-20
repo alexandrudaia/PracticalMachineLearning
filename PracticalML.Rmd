@@ -1,0 +1,220 @@
+---
+title: "Machine Learning   analysis and prediction"
+output:
+  html_document:
+    keep_md: yes
+    number_sections: yes
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+**STEP 1: **
+-reading  the data provided
+```{r}
+setwd("C:/Users/Home/Desktop/mlProject")
+library(caret)
+library(ISLR)
+library(kernlab)
+data=read.table("pml-training.csv",header=F,sep=",",skip=1)
+cnames=readLines("pml-training.csv",1)
+cnames=strsplit(cnames,",",fixed=T)
+cnames[[1]][1]="id"
+cnames[[1]][2]=gsub("\"","",cnames[[1]][2])
+cnames[[1]][]=gsub("\"","",cnames[[1]][])
+names(data)=make.names(cnames[[1]])
+ 
+```
+
+**STEP 2:** 
+-exploring nan's and  removing  columns  with number of nan's bigger than   the treshold
+-exploring ""s and  removing  columns  with number of ""s bigger than   the treshold
+Observation : treshold  is set   to  40 % of total number of  rows
+```{r}
+treshold=nrow(data)*(1/2.5)
+data=data[,colSums(is.na(data))<=treshold]
+data=data[,colSums((data==""))<=treshold]
+```
+
+
+**STEP 3:**  Data slicing - creating  data partitions 
+```{r}
+library(ISLR)
+library(kernlab)
+library(caret)
+inTrain=createDataPartition(y=data$classe,p=0.75,list=FALSE)
+train=data[inTrain,]
+test=data[-inTrain,]
+```
+**STEP 4:** EXPLORING DATA WITH  CLUSTERING 
+
+a)-0ne thing  we could do is to  plot  accel belt belt for the  firs  subject carlitos
+```{r, echo=FALSE}
+names(train)[1:13]
+table(train$classe)
+par(mfrow=c(1,2))
+mar=c(5,4,1,1)
+train=transform(train,classe=factor(classe))
+subset=subset(train,user_name=="carlitos")
+plot(subset$accel_belt_x,col=subset$classe,ylab=names(subset$accel_belt_x))
+plot(subset$accel_belt_y,col=subset$classe,ylab=names(subset$accel_belt_z))
+legend("bottomright",legend=unique(subset$classe),col=unique(subset$classe),pch=1)
+```
+Observation :we can see that  there is no very much  information  regardin  accel_belt except E classe
+
+b)-CLUSTERINGs  BASED ON  accel_belt_x,accel_belt_y,accel_belt_Z
+here  we use  myplclust.R for  plotting(It is   pasted here beacuse  when  I am tryng source(myplclust.R), I am getting  an  error)
+```{r, echo=FALSE}
+myplclust <- function(hclust, lab = hclust$labels, lab.col = rep(1, length(hclust$labels)), 
+                      hang = 0.1, ...) {
+  ## 
+  y <- rep(hclust$height, 2)
+  x <- as.numeric(hclust$merge)
+  y <- y[which(x < 0)]
+  x <- x[which(x < 0)]
+  x <- abs(x)
+  y <- y[order(x)]
+  x <- x[order(x)]
+  plot(hclust, labels = FALSE, hang = hang, ...)
+  text(x = x, y = y[hclust$order] - (max(hclust$height) * hang), labels = lab[hclust$order], 
+       col = lab.col[hclust$order], srt = 90, adj = c(1, 0.5), xpd = NA, ...)
+  
+}
+distMatrix=dist(subset[,7:9])
+hclustering=hclust(distMatrix)
+myplclust(hclustering, lab.col = unclass(subset$classe))
+```
+Observation:
+we can  observ it  is  not very clear
+the accel_belt   features do not appear to be able to discriminate between the 5 different classe's.
+
+c)-SINGULAR  VALUE DECOMPOSITION
+
+```{r, echo=FALSE}
+par(mfrow=c(1,2))
+svd1=svd(scale(subset[,-c(1,2,3,4,5,6,60)]))
+plot(svd1$u[,1],col=subset$classe,pch=19)
+plot(svd1$u[,2],col=subset$classe,pch=19)
+```
+Observation :
+no results
+
+d)-New clustering  with  the maximum contributor and  k-means
+```{r, echo=FALSE}
+maxContrib=which.max(svd1$v[,2])
+names(data[,-c(1,2,10)])[maxContrib]
+kClust=kmeans(subset[,-c(1,2,3,4,5,6,60)], centers=5,nstart=10)
+table(kClust$cluster,subset$classe)#we  find one cluster
+plot(kClust$center[5,20:30],pch=19,ylab="cluster centers",xlab="")
+ 
+```
+
+*CONCLUSION : With  clustering and  k-means    we   can't find    relevant information
+that can  help   in prediction(clustering   was  made like the one  in clustering  case study  from  Exploratory Data Analysis)
+*
+
+ **STEP 5:** Removing  zero  covariates(with lowest  percent  unique)and  columns  with zero information and repartition    data:
+
+```{r} 
+nzv=nearZeroVar(data,saveMetrics=T)#one  nzv  value
+data=data[,-c(1,2,3,4,5,6,7)]
+inTrain=createDataPartition(y=data$classe,p=0.75,list=FALSE)
+train=data[inTrain,]
+test=data[-inTrain,]
+```
+
+**STEP 6:**  Preprocessing with PCA  creating the correlation matrix(to see  what   features are strongly corellated)
+
+```{r} 
+m=abs(cor(train[,-length(colnames(train))]))
+diag(m)=0
+which(m>0.8,arr.ind=T)
+preProcess.default(x = train[,-length(colnames(train))], method = "pca", thresh = 0.90)
+```
+
+ 
+**STEP 6:**  TRYNG  DIFFERENT  MACHINE LEARNING  ALGORITHMS
+*A*-Predictiong  with   *glm * not working  - it  works  only for 2 outcomes 
+
+*B*-Predicting  with  *trees* and analyse   accuracy with *pca* and non pca  
+
+-without pca
+```{r}
+modFit=train(classe~.,method="rpart",data=train)
+pred=predict(modFit,newdata=test)
+c=confusionMatrix(pred,test$classe)
+print(c)
+```
+
+
+-with pca
+```{r}
+modelFit <- train(train$classe ~ ., method = "rpart", preProcess = "pca", 
+                                    data = train, trControl = trainControl(preProcOptions = list(thresh = 0.8)))
+pred=predict(modelFit,newdata=test)
+c=confusionMatrix(pred,test$classe)
+print(c)
+
+```
+
+*Conclusion :* The results  are  not looking  ok  :D
+
+*C*-PREDICTING  WITH BAGGING(TREES)->>avg of  the  results  of trees  where  each  tree corresponds  to a subsample
+
+```{r}
+predictors=data.frame(train[,-length(colnames(train))])
+y=train$classe
+bagtree=bag(predictors,y,B=4,bagControl=bagControl(fit=ctreeBag$fit,predict=ctreeBag$pred,aggregate=ctreeBag$aggregate))
+testbag=data.frame(test[,-length(colnames(test))])
+p=predict(bagtree,testbag)
+c=confusionMatrix(p,test$classe)
+print(c)
+```
+
+*D*-PREDICTING  WITH random forest (EXTENSION OF BAGGING- DIFFERENCE 0 AT EACH  SPLIT BOOTSRAP  VARIABLES)attention y must  be factor  otherwise  it will   make  regression
+```{r}
+library(randomForest)
+modelFit=randomForest(classe~.,data=train,ntree=300)
+p=predict(modelFit,test)
+c=confusionMatrix(p,test$classe)
+print(c)
+```
+
+*conclusion: * The  accuracy  seems to   look ok now( if   we   increase the number  of  tree's  the result will  be   much  better)
+
+*E*- **The  next  part  consist's  o big  REDICTING WITH Ensemble learning- COMBINING PREDICTORS**
+
+Since here   the computational time   is  very big  I am goind  to paste the   code wich  gived me * almost 100% accuracy*, **it uses cross validation to* *:
+
+inBuild=createDataPartition(y=data$classe,p=0.7,list=F)
+
+validation=data[-inBuild,]
+
+buildData=data[inBuild,]
+
+inTrain=createDataPartition(y=buildData$classe,p=0.7,list=F)
+
+training=buildData[inTrain,]
+
+testing=buildData[-inTrain,]
+
+
+modelBoosting=train(classe~.,method="gbm",data=training,verbose=FALSE)
+
+modelRandomFores=train(classe~.,method="rf",data=training,verbose=FALSE,trControl=trainControl(method="cv"),number=3)
+
+pred1=predict(modelBoosting,testing)
+
+pred2=predict(modelRandomFores,testing)
+
+qplot(pred1,pred2,data=test) in case  it is regression problem
+
+predDF=data.frame(pred1,pred2,classe=testing$classe)
+
+comb=train(classe~.,method="gam",data=predDF)
+
+combPred=predict(comb,predDF)
+
+**Conclusions**
+Boosting  , bagging   and  random forests allowed   predictions  for  all of  the 20 test cases 
+
+
