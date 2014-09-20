@@ -1,4 +1,6 @@
 <H3>This is the project for practical machine learning</H3>
+The  html  compiled  file   could  be previewed  here
+http://htmlpreview.github.io/?https://github.com/alexandrudaia/PracticalMachineLearning/blob/master/PracticalML.html
 ========================
 
 <h4>Project description is  is available in the following lines:<h4>
