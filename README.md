@@ -54,5 +54,6 @@ then create a folder where you want the files to be written. Set that to be your
 pml_write_files(answers)
 and it will create one file for each submission. Note: if you use this script, please make sure the files that get written out have one character each with your prediction for the corresponding problem ID. I have noticed the script produces strange results if the answers variable is not a character vector.
 
+ Obs:function   needed   for  clustering  ( used in Exploratory Analysis) can be found here
  
-
+ https://docs.google.com/document/d/1oy-TVnV7VlOI_i_ozT37rtRDkkfZZ9qnWqeu1a2mP2c/edit?usp=sharing
