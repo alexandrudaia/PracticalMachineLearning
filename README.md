@@ -1,7 +1,7 @@
-This is the project for practical machine learning
+<H3>This is the project for practical machine learning</H3>
 ========================
 
-<h1>Project description is  is available in the following lines:<h1>
+<h4>Project description is  is available in the following lines:<h4>
 
 
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
@@ -51,3 +51,7 @@ then create a folder where you want the files to be written. Set that to be your
  
 pml_write_files(answers)
 and it will create one file for each submission. Note: if you use this script, please make sure the files that get written out have one character each with your prediction for the corresponding problem ID. I have noticed the script produces strange results if the answers variable is not a character vector.
+
+*obs*
+used :function(as.character(p)) where p=predict(modelFit,newdata=test
+
